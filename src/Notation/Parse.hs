@@ -1,0 +1,83 @@
+module Notation.Parse where
+
+import Notation hiding (move)
+
+import Text.Parsec
+import Control.Lens
+import Data.List
+import Data.Maybe (fromMaybe)
+
+type Parser m a = ParsecT String () m a
+
+-- Simple parser for integral values
+integral :: (Monad m, Read a, Integral a) => ParsecT String () m a
+integral = read <$> many1 digit
+
+-- Main entry point for parsing moves from strings
+parseMove :: String -> Either ParseError MoveTree
+parseMove = runParser Notation.Parse.move () "<debug>"
+
+-- Moves
+move :: (Monad m) => Parser m MoveTree
+move = sum
+    where
+    sum = do
+        -- Parse in as many products as possible
+        xs <- flip sepBy1 (string ",") product
+        pure $ case xs of 
+                [x] -> x
+                _   -> Sum xs
+
+    product = do
+        -- Parse in as many modified moves as possible
+        xs <- flip sepBy1 (string ".") modified
+        pure $ case xs of
+                [x] -> x
+                _   -> Product xs
+
+    modified = do                                      
+        move <- choice                        -- Parse in moves followed by modifiers
+           [ BaseMove <$> baseMove                  -- Either a basemove
+           , between (string "(") (string ")") move -- Or a pair of parens with another move
+           ]
+        mods <- modifiers                     -- Parse in modifiers
+        pure $ if null mods                   -- If there are no modifiers...
+                  then move                         -- Just return move
+                  else Modified move mods           -- Otherwise, return modified move
+
+baseMove :: (Monad m) => Parser m Delta
+baseMove = fmap Delta
+         $ between (string "[") (string "]")
+         $ sepBy1 integral (string ",")
+
+-- Parse any modifier, or multiple modifiers to then compose
+modifiers :: (Monad m) => Parser m [Modifier]
+modifiers = many modifier
+modifier :: (Monad m) => Parser m Modifier
+modifier = choice [mirrorX, mirrorY, swapXY, mirrorXY, mirrorSwapXY, rangeMod]
+
+-- Modifiers for axis mirroring / swapping
+mirrorX, mirrorY, swapXY, mirrorXY, mirrorSwapXY :: (Monad m) => Parser m Modifier
+mirrorX      = char '-' >> return (Mirror 0)
+mirrorY      = char '|' >> return (Mirror 1)
+swapXY       = char '/' >> return (Swap 0 1)
+mirrorXY     = char '+' >> return (MirrorXY)
+mirrorSwapXY = char '*' >> return (MirrorXYSwap)
+
+rangeMod :: (Monad m) => Parser m Modifier
+rangeMod = fmap Exponents
+         $ between (string "{") (string "}")
+         $ sepBy expGroup (string ",")
+    where
+    -- Parse in either a range, or a single integer, as a list of integers
+    expGroup :: (Monad m) => Parser m ExpGroup
+    expGroup = choice [range, Single <$> integral]
+
+    -- Parse in a range {<start>..<end>}
+    range :: (Monad m) => Parser m ExpGroup
+    range = do
+        mayStart <- optionMaybe integral
+        string ".."
+        mayEnd <- optionMaybe integral
+        pure $ Range mayStart mayEnd
+
