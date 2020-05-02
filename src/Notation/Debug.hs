@@ -8,10 +8,10 @@ import Graphics.Gloss
 import Graphics.Gloss.Data.Vector
 import Graphics.Gloss.Geometry.Angle
 
-import qualified Diagrams.Prelude as D
-import Diagrams.Prelude ((|||),(===))
-import qualified Diagrams.Backend.SVG as D
-import Diagrams.Attributes
+-- import qualified Diagrams.Prelude as D
+-- import Diagrams.Prelude ((|||),(===))
+-- import qualified Diagrams.Backend.SVG as D
+-- import Diagrams.Attributes
 
 import Data.Colour.SRGB
 
@@ -119,6 +119,7 @@ glossBoard ((minX,maxX):(minY,maxY):_) = board
                        then makeColorI 200 250 200 255
                        else makeColorI 100 200 100 255
 
+    {-
 -- DIAGRAMS RENDERER
 diaMove :: Move -> D.Diagram D.B
 diaMove (Move ds) = undefined
@@ -138,3 +139,4 @@ diaBoard [(minX,maxX),(minY,maxY)] = board
     tileColor x y = if even x `xor` even y
                        then sRGB 0.8 1.0 0.8
                        else sRGB 0.4 0.8 0.4
+    -}
