@@ -69,17 +69,21 @@ expGroups = fmap Exponents
          $ between (string "{") (string "}")
          $ sepBy1 expGroup (string ",")
     where
-    -- Parse in either a range, or a single integer, as a list of integers
-    expGroup :: (Monad m) => Parser m ExpGroup
-    expGroup = choice [Single <$> integral, range]
 
-    -- Parse in a range {<start>..<end>}
-    range :: (Monad m) => Parser m ExpGroup
-    range = do
-        mayStart <- optionMaybe integral
+    -- Parse in either a range, or a single integer, as a list of integers
+    expGroup = choice [startsWithDotDot, startsWithInteger]
+    startsWithDotDot = Range Nothing <$> rangeEnd
+    startsWithInteger = do
+        start <- integral
+        mayRange <- optionMaybe rangeEnd
+        case mayRange of
+          (Just mayEnd) -> pure $ Range (Just start) mayEnd
+          Nothing       -> pure $ Single start
+
+    -- Optional range
+    rangeEnd = do
         string ".."
-        mayEnd <- optionMaybe integral
-        pure $ Range mayStart mayEnd
+        optionMaybe integral
 
 ranges :: (Monad m) => Parser m Modifier
 ranges = do
