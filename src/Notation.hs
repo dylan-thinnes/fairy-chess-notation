@@ -31,7 +31,7 @@ instance Num Delta where
     (-) (Delta xs) (Delta ys) = Delta $ zipWith (-) xs ys
     abs (Delta xs) = Delta $ map abs xs
     signum (Delta xs) = Delta $ map signum xs
-    fromInteger i = Delta $ replicate 3 i
+    fromInteger i = Delta $ repeat i
 
 -- Generate basic lenses (Isos) for data types
 makeLenses ''Delta
