@@ -65,11 +65,17 @@ terminal ms
                 | c `S.member` coordsSet = "\ESC[35;1mX\ESC[0m" -- X if coord is the endpoint of a move
                 | otherwise              = "+" -- + if coord isn't anything important
 
+-- Convert a move to its final coord
+getCoord :: Move -> [Integer]
+getCoord = _delta . sum . _move
+
+-- Convert a move to its final coord
+getCoordPath :: Move -> [[Integer]]
+getCoordPath = map _delta . tail . scanl (+) 0 . _move
+
+-- Turn whole moveset to final deltas
 getCoords :: Moveset -> [[Integer]]
-getCoords ms = coords
-    where
-    toCoord = _delta . sum . _move     -- Convert a move to its final coord
-    coords = map toCoord $ _moveset ms -- Turn whole moveset to final deltas
+getCoords = map getCoord . _moveset
 
 -- GLOSS RENDERER
 -- Gloss-specific Utils
