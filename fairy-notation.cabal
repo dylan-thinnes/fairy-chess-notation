@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 4d6d79fa0d2b2d119640fcf80bab47748247813f7330d7b8eb615bcc09f6965f
+-- hash: 4288395d0d03fcdb0f4d2aff3fa468f20ef1cfd16d5ba692949939e469ba7343
 
 name:           fairy-notation
 version:        0.1.0.0
@@ -49,13 +49,37 @@ library
     , unordered-containers
   default-language: Haskell2010
 
-executable fairy-notation-exe
-  main-is: Main.hs
+executable glade-notation-gloss
+  main-is: GlossMain.hs
   other-modules:
+      TermMain
       Paths_fairy_notation
   hs-source-dirs:
       app
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -main-is GlossMain
+  build-depends:
+      base >=4.7 && <5
+    , colour
+    , containers
+    , diagrams
+    , diagrams-lib
+    , diagrams-svg
+    , fairy-notation
+    , gloss
+    , lens
+    , parsec
+    , semirings
+    , unordered-containers
+  default-language: Haskell2010
+
+executable glade-notation-terminal
+  main-is: TermMain.hs
+  other-modules:
+      GlossMain
+      Paths_fairy_notation
+  hs-source-dirs:
+      app
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -main-is TermMain
   build-depends:
       base >=4.7 && <5
     , colour

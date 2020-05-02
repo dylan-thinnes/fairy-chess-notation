@@ -36,13 +36,24 @@ library:
   source-dirs: src
 
 executables:
-  fairy-notation-exe:
-    main:                Main.hs
+  glade-notation-gloss:
+    main:                GlossMain.hs
     source-dirs:         app
     ghc-options:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    - -main-is GlossMain
+    dependencies:
+    - fairy-notation
+  glade-notation-terminal:
+    main:                TermMain.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    - -main-is TermMain
     dependencies:
     - fairy-notation
 

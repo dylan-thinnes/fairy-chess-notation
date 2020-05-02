@@ -18,7 +18,6 @@ import Data.Colour.SRGB
 import qualified Data.HashSet as S
 import Data.List (transpose)
 import Data.Bifunctor (bimap)
-import Control.Monad (forever)
 
 -- Utils
 (#) x f = f x
@@ -27,33 +26,39 @@ import Control.Monad (forever)
 minmax :: Ord a => [a] -> (a,a)
 minmax xs = (minimum xs, maximum xs)
 
-getMinsMaxes :: [[Integer]] -> [(Integer, Integer)]
-getMinsMaxes coords = map (bimap (min 0) (max 0)) $ map minmax $ transpose coords
+-- Get ranges of each axis, with at least coord 0 always in range
+getRanges :: [[Integer]] -> [(Integer, Integer)]
+getRanges coords
+  = let minsmaxes = map minmax $ transpose coords
+        clampedToZero = map (bimap (min 0) (max 0)) minsmaxes
+     in if null clampedToZero
+           then repeat (0,0)
+           else clampedToZero
 
 -- Runner
-debug :: (Moveset -> IO ()) -> IO ()
+debug :: (Moveset -> IO a) -> IO a
 debug f = do
     input <- getLine
     let parse = parseMove input
     case parse of
-      Left err   -> putStrLn $ "No parse: " ++ show err
+      Left err   -> do
+                      putStrLn ("No parse: " ++ show err)
+                      putStrLn "Try again."
+                      debug f
       Right tree -> f $ treeToSet tree
-
-debugRepeat :: (Moveset -> IO ()) -> IO ()
-debugRepeat f = forever $ debug f
 
 -- IN TERMINAL RENDERER
 terminal :: Moveset -> IO ()
 terminal ms
   = putStr $ unlines $ map concat
-  $ flip map [minY..maxY] $ \y ->
+  $ flip map [maxY,maxY-1..minY] $ \y ->
         flip map [minX..maxX] $ \x ->
             coordChar [x,y]
     where
     coords = getCoords ms              -- Turn whole moveset to final deltas
     coordsSet = S.fromList coords      -- Turn that moveset into a set for quick lookup
 
-    [(minX,maxX),(minY,maxY)] = getMinsMaxes coords
+    ((minX,maxX):(minY,maxY):_) = getRanges coords
 
     -- Turn a coord into the appropriate character
     coordChar c | c == [0,0]             = "\ESC[36;1mO\ESC[0m" -- O if origin
@@ -80,12 +85,12 @@ diff (x1, y1) (x2, y2) = (x2 - x1, y2 - y1)
 
 -- Actual gloss runner
 gloss :: Moveset -> IO ()
-gloss = display (InWindow "Gloss" (100,100) (0,0)) white . glossMoveset
+gloss = display FullScreen white . glossMoveset
 
 glossMoveset :: Moveset -> Picture
 glossMoveset ms@(Moveset moves) = Pictures (board : map glossMove moves)
     where
-    board = glossBoard (getMinsMaxes $ getCoords ms)
+    board = glossBoard (getRanges $ getCoords ms)
 
 glossMove :: Move -> Picture
 glossMove (Move ds) = color (makeColorI 0 0 255 120) path
@@ -95,15 +100,21 @@ glossMove (Move ds) = color (makeColorI 0 0 255 120) path
     path = foldr addToPath (color red $ ThickCircle 4 2) vs
 
 glossBoard :: [(Integer, Integer)] -> Picture
-glossBoard [(minX,maxX),(minY,maxY)] = board
+glossBoard ((minX,maxX):(minY,maxY):_) = board
     where
     board = Pictures $ concat
-            $ flip map [minY..maxY] $ \y ->
+            $ flip map [maxY,maxY-1..minY] $ \y ->
                   flip map [minX..maxX] $ \x ->
-                      Polygon (rectanglePath 20 20)
-                      # color (tileColor x y)
-                      # translate (fromIntegral $ x * 20) (fromIntegral $ y * 20)
+                      tile x y
     xor x y = not $ x == y
+    tile x y = Pictures [ Polygon (rectanglePath 20 20)
+                            # color (tileColor x y)
+                        , if x == 0 && y == 0
+                             then ThickCircle 4 2
+                                    # color black
+                             else Blank
+                        ]
+             # translate (fromIntegral $ x * 20) (fromIntegral $ y * 20)
     tileColor x y = if even x `xor` even y
                        then makeColorI 200 250 200 255
                        else makeColorI 100 200 100 255
