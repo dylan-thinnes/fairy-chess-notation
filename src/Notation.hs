@@ -45,7 +45,13 @@ data MoveTree = Sum [MoveTree]
               | BaseMove Delta
     deriving Show
 
-data Modifier = Mirror Int | Swap Int Int | MirrorXY | MirrorXYSwap | Exponents [ExpGroup]
+data Modifier = Mirror Int
+              | Swap Int Int
+              | MirrorXY
+              | MirrorXYSwap
+              | Exponents [ExpGroup]
+              | Above Int Integer
+              | Below Int Integer
     deriving Show
 
 data ExpGroup = Range (Maybe Int) (Maybe Int) | Single Int

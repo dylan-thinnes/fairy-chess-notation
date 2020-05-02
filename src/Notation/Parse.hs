@@ -54,7 +54,7 @@ baseMove = fmap Delta
 modifiers :: (Monad m) => Parser m [Modifier]
 modifiers = many modifier
 modifier :: (Monad m) => Parser m Modifier
-modifier = choice [mirrorX, mirrorY, swapXY, mirrorXY, mirrorSwapXY, rangeMod]
+modifier = choice [mirrorX, mirrorY, swapXY, mirrorXY, mirrorSwapXY, expGroups, ranges]
 
 -- Modifiers for axis mirroring / swapping
 mirrorX, mirrorY, swapXY, mirrorXY, mirrorSwapXY :: (Monad m) => Parser m Modifier
@@ -64,14 +64,14 @@ swapXY       = char '/' >> return (Swap 0 1)
 mirrorXY     = char '+' >> return (MirrorXY)
 mirrorSwapXY = char '*' >> return (MirrorXYSwap)
 
-rangeMod :: (Monad m) => Parser m Modifier
-rangeMod = fmap Exponents
+expGroups :: (Monad m) => Parser m Modifier
+expGroups = fmap Exponents
          $ between (string "{") (string "}")
-         $ sepBy expGroup (string ",")
+         $ sepBy1 expGroup (string ",")
     where
     -- Parse in either a range, or a single integer, as a list of integers
     expGroup :: (Monad m) => Parser m ExpGroup
-    expGroup = choice [range, Single <$> integral]
+    expGroup = choice [Single <$> integral, range]
 
     -- Parse in a range {<start>..<end>}
     range :: (Monad m) => Parser m ExpGroup
@@ -81,3 +81,12 @@ rangeMod = fmap Exponents
         mayEnd <- optionMaybe integral
         pure $ Range mayStart mayEnd
 
+ranges :: (Monad m) => Parser m Modifier
+ranges = do
+    chars <- choice $ map (many1 . char) ['^','V','>','<']
+    let len = fromIntegral $ length chars - 1
+    pure $ case head chars of
+              '^' -> Above 1 len
+              'V' -> Below 1 len
+              '>' -> Above 0 len
+              '<' -> Below 0 len

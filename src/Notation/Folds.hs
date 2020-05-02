@@ -4,7 +4,7 @@ module Notation.Folds where
 
 import Notation
 
-import Control.Lens
+import Control.Lens (Fold, (%~), (.~), (&), (^?), folded, folding, mapped, toListOf, ix, filtered, anyOf)
 import Data.List (nub)
 import qualified Data.Semiring as S
 
@@ -40,13 +40,13 @@ swap i j xs
         _ -> xs
 
 -- The general mirror and swap modifiers, and their composition
-x, y, z, p, s, t :: Fold Move Move
-x = forking $ mmap $ mirror 0
-y = forking $ mmap $ mirror 1
-z = forking $ mmap $ mirror 2
-p = endo [x,y,z] -- "plus"
-s = forking $ mmap $ swap 0 1
-t = endo [p,s] -- "times"
+xm, ym, zm, pm, sm, tm :: Fold Move Move
+xm = forking $ mmap $ mirror 0
+ym = forking $ mmap $ mirror 1
+zm = forking $ mmap $ mirror 2
+pm = endo [xm,ym,zm] -- "plus"
+sm = forking $ mmap $ swap 0 1
+tm = endo [pm,sm] -- "times"
 
 -- The range limiting modifiers
 ipred :: Int -> (Integer -> Bool) -> Fold Move Move
@@ -54,7 +54,7 @@ ipred axis p = filtered (anyOf (move . folded . delta . ix axis) p)
 above :: Int -> Integer -> Fold Move Move
 above axis x = ipred axis (>=x)
 below :: Int -> Integer -> Fold Move Move
-below axis x = ipred axis (<=x)
+below axis x = ipred axis (<=(-x))
 
 -- Expand a set of moves using a Fold over each move
 expand :: Moveset -> Fold Move Move -> Moveset
@@ -111,9 +111,11 @@ treeToSet (BaseMove delta) = Moveset [Move [delta]]
 modToFold :: Modifier -> (Moveset -> Moveset)
 modToFold (Mirror i)      = (>>> (forking $ mmap $ mirror i))
 modToFold (Swap i j)      = (>>> (forking $ mmap $ swap i j))
-modToFold (MirrorXY)      = (>>> x . y)
-modToFold (MirrorXYSwap)  = (>>> x . y . s)
+modToFold (MirrorXY)      = (>>> xm . ym)
+modToFold (MirrorXYSwap)  = (>>> xm . ym . sm)
 modToFold (Exponents grp) = (^^^* (foldMap expGroupToList grp))
+modToFold (Above axis v)  = (>>> above axis v)
+modToFold (Below axis v)  = (>>> below axis v)
 
 expGroupToList :: ExpGroup -> [Int]
 expGroupToList (Range Nothing end)
