@@ -7,6 +7,7 @@ import Notation.Parse
 import Graphics.Gloss
 import Graphics.Gloss.Data.Vector
 import Graphics.Gloss.Geometry.Angle
+import Graphics.Gloss.Interface.Pure.Game
 
 -- import qualified Diagrams.Prelude as D
 -- import Diagrams.Prelude ((|||),(===))
@@ -18,6 +19,7 @@ import Data.Colour.SRGB
 import qualified Data.HashSet as S
 import Data.List (transpose)
 import Data.Bifunctor (bimap)
+import Control.Lens (_Just, _1, _2, (.~), (%~))
 
 -- Utils
 (#) x f = f x
@@ -91,12 +93,77 @@ diff (x1, y1) (x2, y2) = (x2 - x1, y2 - y1)
 
 -- Actual gloss runner
 gloss :: Moveset -> IO ()
-gloss = display FullScreen white . glossMoveset
+gloss ms
+  = play 
+    (InWindow "Gloss" (100,100) (0,0)) white 1
+    (ms, Nothing, ms)
+    render handler
+    (const id)
+    where
+    render (moveset, cursor, subset)
+      = Pictures
+      $ [ glossBoard moveset
+        , cursorGloss cursor
+        , glossMoveset subset
+        , ThickCircle 4 2 # color black
+        ]
+    handler (EventMotion pos) state@(moveset, cursor, _)
+      | Just newPos == fmap fst cursor = state
+      | otherwise                      = updateCursor (setPos newPos) state
+        where
+        newPos = roundToTile pos
+    handler (EventKey (MouseButton RightButton) Down _ _) state
+      = updateCursor cycleMode state
+    handler _ state = state
+
+type Cursor = Maybe ((Float, Float), CursorMode)
+data CursorMode = None | EndPoint | MidPoint
+    deriving (Show, Eq, Enum, Bounded)
+updateCursor :: (Cursor -> Cursor)
+             -> (Moveset, Cursor, Moveset) -> (Moveset, Cursor, Moveset)
+updateCursor f (moveset, cursor, _)
+  = let newCur = f cursor
+     in (moveset, newCur, restrictByCursor newCur moveset)
+setPos :: (Float, Float) -> Cursor -> Cursor
+setPos newPos Nothing = Just (newPos, None)
+setPos newPos x       = _Just . _1 .~ newPos $ x
+cycleMode :: Cursor -> Cursor
+cycleMode = _Just . _2 %~ f
+    where
+    f newMode | newMode == maxBound = minBound
+              | otherwise           = succ newMode
+
+restrictByCursor :: Cursor -> Moveset -> Moveset
+restrictByCursor Nothing ms = ms
+restrictByCursor (Just ((x,y), mode)) (Moveset ms)
+  = Moveset $ if null newMs then ms else newMs
+    where
+    pos = [floor x `div` 20, floor y `div` 20]
+    endsOnXY move = pos == getCoord move
+    containsXY move = pos `elem` getCoordPath move
+    newMs | mode == None = ms
+          | mode == EndPoint = filter endsOnXY ms
+          | mode == MidPoint = filter containsXY ms
+
+cursorGloss :: Cursor -> Picture
+cursorGloss Nothing = Blank
+cursorGloss (Just ((x,y), mode))
+  = translate x y
+  $ color (modeColor mode)
+  $ rectangleSolid 20 20
+
+modeColor :: CursorMode -> Color
+modeColor None       = makeColorI 0   0 0   100
+modeColor EndPoint   = makeColorI 255 0 0   100
+modeColor MidPoint   = makeColorI 0   0 255 100
+
+roundToTile :: (Float, Float) -> (Float, Float)
+roundToTile = bimap roundTo20 roundTo20
+roundTo20 :: Float -> Float
+roundTo20 x = fromIntegral $ 20 * round (x / 20)
 
 glossMoveset :: Moveset -> Picture
-glossMoveset ms@(Moveset moves) = Pictures (board : map glossMove moves)
-    where
-    board = glossBoard (getRanges $ getCoords ms)
+glossMoveset ms@(Moveset moves) = Pictures $ map glossMove moves
 
 glossMove :: Move -> Picture
 glossMove (Move ds) = color (makeColorI 0 0 255 120) path
@@ -105,21 +172,19 @@ glossMove (Move ds) = color (makeColorI 0 0 255 120) path
     addToPath v p = Pictures [thickLineSeg ((0,0),v), uncurry translate v p]
     path = foldr addToPath (color red $ ThickCircle 4 2) vs
 
-glossBoard :: [(Integer, Integer)] -> Picture
-glossBoard ((minX,maxX):(minY,maxY):_) = board
+glossBoard :: Moveset -> Picture
+glossBoard ms = glossBoardFromRange $ getRanges $ getCoords ms
+
+glossBoardFromRange :: [(Integer, Integer)] -> Picture
+glossBoardFromRange ((minX,maxX):(minY,maxY):_) = board
     where
     board = Pictures $ concat
             $ flip map [maxY,maxY-1..minY] $ \y ->
                   flip map [minX..maxX] $ \x ->
                       tile x y
     xor x y = not $ x == y
-    tile x y = Pictures [ Polygon (rectanglePath 20 20)
-                            # color (tileColor x y)
-                        , if x == 0 && y == 0
-                             then ThickCircle 4 2
-                                    # color black
-                             else Blank
-                        ]
+    tile x y = Polygon (rectanglePath 20 20)
+             # color (tileColor x y)
              # translate (fromIntegral $ x * 20) (fromIntegral $ y * 20)
     tileColor x y = if even x `xor` even y
                        then makeColorI 200 250 200 255
