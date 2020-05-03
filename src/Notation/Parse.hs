@@ -11,7 +11,9 @@ type Parser m a = ParsecT String () m a
 
 -- Simple parser for integral values
 integral :: (Monad m, Read a, Integral a) => ParsecT String () m a
-integral = read <$> many1 digit
+integral = read <$> choice [(:) <$> char '-' <*> pos, pos]
+    where
+    pos = many1 digit
 
 -- Main entry point for parsing moves from strings
 parseMove :: String -> Either ParseError MoveTree
