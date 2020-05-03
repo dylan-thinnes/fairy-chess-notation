@@ -17,8 +17,8 @@ displacement.
 The most basic moveset is the "atom", written as `[x,y]`.
 
 This simply creates a moveset containing one move, x digits along the
-horizontal axis, and y digits along the vertical. For example, a pawn's
-forward-1 non-aggressive move is `[0,1]`.
+horizontal axis, and y digits along the vertical. For example, a move that goes
+forward by 2 and to the right by 1 would be written `[1,2]`.
 
 ![](doc/images/./[1,2].png)
 
@@ -72,7 +72,7 @@ their multiplication would be broken down as follows:
 \=
 ![](doc/images/./%28[2,0],[0,2]%29.%28[1,2],[-1,-2]%29.png)
 
-### Moveset Modifiers
+## Moveset Modifiers
 
 Each moveset can be modified by appending modifiers, some of which are listed as follows:
 
@@ -168,7 +168,7 @@ as long as possible, e.g. bishop and rook
 
 A rook could be `[0,1]{1..}*`
 
-![](doc/images/[1,1]{1..4}*.png)
+![](doc/images/[1,0]{1..4}*.png)
 
 A bishop could be `([1,1]){1..}*`
 
