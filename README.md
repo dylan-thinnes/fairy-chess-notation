@@ -33,7 +33,7 @@ independently. e.g. `[1,2],[2,1]` becomes a piece capable of doing `[1,2]`
 ![](doc/images/./[1,2].png)
 +
 ![](doc/images/./[2,1].png)
-=
+\=
 ![](doc/images/./[1,2],[2,1].png)
 
 ## Multiplication
@@ -51,7 +51,7 @@ blocked, it would therefore not be possible to proceed to `[2,1],` so the
 ![](doc/images/./[1,2].png)
 *
 ![](doc/images/./[2,1].png)
-=
+\=
 ![](doc/images/./[1,2].[2,1].png)
 
 ### Multiplication tries all combinations
@@ -69,7 +69,7 @@ their multiplication would be broken down as follows:
 ![](doc/images/./[2,0],[0,2].png)
 *
 ![](doc/images/./[1,2],[-1,-2].png)
-=
+\=
 ![](doc/images/./%28[2,0],[0,2]%29.%28[1,2],[-1,-2]%29.png)
 
 ### Moveset Modifiers
