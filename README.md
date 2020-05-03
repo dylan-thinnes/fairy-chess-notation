@@ -78,19 +78,19 @@ Each moveset can be modified by appending modifiers, some of which are listed as
 
 ### Mirror, mirror, on the wall...
 
-### `-`
-
-  Reflects a moveset along the x-axis  
-  e.g. `[1,2]-` would mean a piece that can move `[1,2]` or `[-1,2]`
-
-  ![](doc/images/./[1,2].png) => ![](doc/images/./[1,2]-.png)
-
 ### `|`
 
-  Reflects a moveset along the y-axis  
-  e.g. `[1,2]|` would mean a piece that can move `[1,2]` or `[1,-2]`
+  Reflects a moveset **across** the y-axis (along the x-axis)  
+  e.g. `[1,2]|` would mean a piece that can move `[1,2]` or `[-1,2]`
 
   ![](doc/images/./[1,2].png) => ![](doc/images/./[1,2]|.png)
+
+### `-`
+
+  Reflects a moveset **across** the x-axis (along the y-axis)  
+  e.g. `[1,2]-` would mean a piece that can move `[1,2]` or `[1,-2]`
+
+  ![](doc/images/./[1,2].png) => ![](doc/images/./[1,2]-.png)
 
 ### `+`
 

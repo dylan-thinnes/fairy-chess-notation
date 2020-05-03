@@ -60,8 +60,8 @@ modifier = choice [mirrorX, mirrorY, swapXY, mirrorXY, mirrorSwapXY, expGroups, 
 
 -- Modifiers for axis mirroring / swapping
 mirrorX, mirrorY, swapXY, mirrorXY, mirrorSwapXY :: (Monad m) => Parser m Modifier
-mirrorX      = char '-' >> return (Mirror 0)
-mirrorY      = char '|' >> return (Mirror 1)
+mirrorX      = char '|' >> return (Mirror 0)
+mirrorY      = char '-' >> return (Mirror 1)
 swapXY       = char '/' >> return (Swap 0 1)
 mirrorXY     = char '+' >> return (MirrorXY)
 mirrorSwapXY = char '*' >> return (MirrorXYSwap)
