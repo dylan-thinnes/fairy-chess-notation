@@ -48,10 +48,11 @@ makeLenses ''Move
 makeLenses ''Moveset
 
 -- Parse tree for the notation
-data MoveTree = Sum [MoveTree]
-              | Product [MoveTree]
-              | Modified MoveTree [Modifier]
-              | BaseMove Delta
+data MoveTree
+    = MoveTree :+: MoveTree
+    | MoveTree :*: MoveTree
+    | Modified MoveTree [Modifier]
+    | BaseMove Delta
     deriving Show
 
 data Modifier = Mirror Int
