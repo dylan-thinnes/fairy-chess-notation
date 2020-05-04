@@ -31,6 +31,8 @@ dependencies:
 - diagrams-svg
 - colour
 - parsec
+- recursion-schemes
+- multirec
 
 library:
   source-dirs: src
