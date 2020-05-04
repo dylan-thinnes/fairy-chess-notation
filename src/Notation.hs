@@ -6,7 +6,6 @@
 module Notation where
 
 import Control.Lens.TH (makeLenses)
-import Data.Functor.Foldable
 import Data.Functor.Foldable.TH (makeBaseFunctor)
 
 -- Basic data types: Delta, Move, Moveset
