@@ -115,7 +115,7 @@ Each moveset can be modified by appending modifiers, some of which are listed as
 
 ### Containing multitudes...
 
-In order to multiply a moveset with itself, use the range multiplication
+In order to multiply a moveset with itself, use the range **multiplication**
 modifier, written as `{a..b}` or `{c}`.
 
 The ranges can be combined with `,` so one can write
@@ -127,32 +127,62 @@ which would be equivalent to
 {2,3,5,7,8,9}
 ```
 
-This multiplies a moveset by itself by the number of times for each value in
-the range, and then sums those multiplied movesets.
+This multiplies each move in a moveset by itself by the number of times for
+each value in the range, and then sums those multiplied movesets.
+
+#### Examples
 
 `[1,2]{1} = [1,2]`
 
+![](doc/images/[1,2].png)
+=> {1} =>
 ![](doc/images/[1,2]{1}.png)
+
+#### `[1,2]{2}`
 
 `[1,2]{2} = [1,2].[1,2]`
 
+![](doc/images/[1,2].png)
+=> {2} =>
 ![](doc/images/[1,2]{2}.png)
+
+#### `[1,2]{3}`
 
 `[1,2]{3} = [1,2].[1,2].[1,2]`
 
+![](doc/images/[1,2].png)
+=> {3} =>
 ![](doc/images/[1,2]{3}.png)
 
-`[1,2]{1..3}`
+#### `[1,2]{1..3}`
 
+![](doc/images/[1,2].png)
+=> {1..3} =>
 ![](doc/images/[1,2]{1,2,3}.png)
 
-`[1,2]{2,3}`
+#### `[1,2]{2,3}`
 
+![](doc/images/[1,2].png)
+=> {2,3} =>
 ![](doc/images/[1,2]{2,3}.png)
 
-`([1,2],[2,1]){2} = ([1,2],[2,1]).([1,2],[2,1]) = ([1,2].[1,2]),([1,2].[2,1]),([2,1].[1,2]),([1,2].[1,2])`
+#### `([1,2],[2,1]){2}`
 
+`([1,2],[2,1]){2} = ([1,2].[1,2]),([2,1].[2,1])`
+
+![](doc/images/./[1,2],[2,1].png)
+=> {2} =>
 ![](doc/images/%28[1,2],[2,1]%29{2}.png)
+
+#### `([1,2],[2,1]){1..3}`
+
+`([1,2],[2,1]){1..3} = ([1,2]),([1,2].[1,2]),([1,2].[1,2].[1,2]),([2,1]),([2,1].[2,1]),([2,1].[2,1].[2,1])`
+
+![](doc/images/./[1,2],[2,1].png)
+=> {1..3} =>
+![](doc/images/%28[1,2],[2,1]%29{1..3}.png)
+
+#### Omitting bounds
 
 The bounds on a `..` can be omitted, in which case they'll default to 1 for the
 left and infinity for the right.
@@ -162,6 +192,8 @@ left and infinity for the right.
 {2..} = {2,3,4,5,6,7...}
 {..}  = {1,2,3,4,5,6,7...}
 ```
+
+#### Useful examples
 
 This is useful for expressing pieces that make multiple of the same small step
 as long as possible, e.g. bishop and rook
@@ -178,4 +210,40 @@ A queen could be `[0,1]{1..}*,[1,1]{1..}*`
 
 ![](doc/images/[0,1]{1..4}*,[1,1]{1..4}*.png)
 
+### Exponentiation
 
+This multiplies each an **entire moveset** by itself by the number of times for
+each value in the range, and then sums those multiplied movesets.
+
+While the `{}` operator runs on each move individually, this operator, `{{}}`
+actually multiplies movesets using `.` repeatedly. This may be a hard concept
+to grasp - let's look at an example.
+
+#### `([1,2],[2,1]){{2}}`
+
+`([1,2],[2,1]){{2}} = ([1,2],[2,1]).([1,2],[2,1]) = ([1,2].[1,2]),([1,2].[2,1]),([2,1].[1,2]),([1,2].[1,2])`
+
+![](doc/images/./[1,2],[2,1].png)
+=> `{{2}}` =>
+![](doc/images/%28[1,2],[2,1]%29{{2}}.png)
+
+#### `([1,2],[2,1])|{{2}}`
+
+![](doc/images/./[1,2],[2,1].png)
+=> `|` =>
+![](doc/images/./%28[1,2],[2,1]%29|.png)
+=> `{{2}}` =>
+![](doc/images/%28[1,2],[2,1]%29|{{2}}.png)
+
+#### `([1,2],[2,1]){{2}}|`
+
+![](doc/images/./[1,2],[2,1].png)
+=> `{{2}}` =>
+![](doc/images/./%28[1,2],[2,1]%29{{2}}.png)
+=> `|` =>
+![](doc/images/%28[1,2],[2,1]%29{{2}}|.png)
+
+Notice how the order of modifiers here, `|` and `{{2}}`, affect the result.
+This is the case anywhere you use mirrors and then the `{{}}` operator. This is
+not the case for mirorrs and `{}`, where the order does not affect the end
+result.
