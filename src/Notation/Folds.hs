@@ -7,6 +7,7 @@ import Notation
 import Control.Lens (Fold, (%~), (.~), (&), (^?), folded, folding, mapped, toListOf, ix, filtered, anyOf)
 import Data.List (nub)
 import qualified Data.Semiring as S
+import Data.Functor.Foldable
 
 -- Turn any function that can change a delta to a function that maps that
 -- change over ever delta in a move
@@ -103,10 +104,13 @@ instance S.Semiring Moveset where
 
 -- Converter for MoveTree to Moveset
 treeToSet :: MoveTree -> Moveset
-treeToSet (t1 :+: t2) = treeToSet t1 +++ treeToSet t2
-treeToSet (t1 :*: t2) = treeToSet t1 *** treeToSet t2
-treeToSet (Modified tree mods) = endo (reverse $ map modToFold mods) $ treeToSet tree 
-treeToSet (BaseMove delta) = Moveset [Move [delta]]
+treeToSet = cata f
+    where
+    f :: MoveTreeF Moveset -> Moveset
+    f (ms1 :+:$ ms2) = ms1 +++ ms2
+    f (ms1 :*:$ ms2) = ms1 *** ms2
+    f (ModifiedF ms mods) = endo (reverse $ map modToFold mods) ms
+    f (BaseMoveF delta) = Moveset [Move [delta]]
 
 modToFold :: Modifier -> (Moveset -> Moveset)
 modToFold (Mirror i)      = (>>> (forking $ mmap $ mirror i))
