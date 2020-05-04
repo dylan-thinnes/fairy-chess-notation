@@ -62,7 +62,8 @@ baseMove = fmap Delta
 modifiers :: (Monad m) => Parser m [Modifier]
 modifiers = many modifier
 modifier :: (Monad m) => Parser m Modifier
-modifier = choice [mirrorX, mirrorY, swapXY, mirrorXY, mirrorSwapXY, expGroups, ranges]
+modifier = choice $ map try
+         $ [mirrorX, mirrorY, swapXY, mirrorXY, mirrorSwapXY, exponents, mapMultiply, ranges]
 
 -- Modifiers for axis mirroring / swapping
 mirrorX, mirrorY, swapXY, mirrorXY, mirrorSwapXY :: (Monad m) => Parser m Modifier
@@ -72,10 +73,17 @@ swapXY       = char '/' >> return (Swap 0 1)
 mirrorXY     = char '+' >> return (MirrorXY)
 mirrorSwapXY = char '*' >> return (MirrorXYSwap)
 
-expGroups :: (Monad m) => Parser m Modifier
-expGroups = fmap Exponents
-         $ between (string "{") (string "}")
-         $ sepBy1 expGroup (string ",")
+mapMultiply :: (Monad m) => Parser m Modifier
+mapMultiply = groups (string "{") (string "}") MapMultiply
+
+exponents :: (Monad m) => Parser m Modifier
+exponents = groups (string "{{") (string "}}") Exponents
+
+groups :: (Monad m) => Parser m a -> Parser m b -> ([Group] -> Modifier) -> Parser m Modifier
+groups left right f
+  = fmap f
+  $ between left right
+  $ sepBy1 expGroup (string ",")
     where
 
     -- Parse in either a range, or a single integer, as a list of integers

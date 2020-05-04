@@ -74,6 +74,10 @@ zero = Moveset []
 mjoin :: Move -> Move -> Move
 mjoin (Move m1) (Move m2) = Move $ m1 ++ m2
 
+mmult :: Move -> Int -> Move
+mmult m 0 = Move []
+mmult m n = m `mjoin` mmult m (n - 1)
+
 -- Multiplication of movesets
 (***) :: Moveset -> Moveset -> Moveset
 (***) (Moveset m1) (Moveset m2) = Moveset $ mjoin <$> m1 <*> m2
@@ -84,11 +88,21 @@ infixl 4 ***
 (+++) (Moveset m1) (Moveset m2) = Moveset $ m1 ++ m2
 infixr 3 +++
 
+-- Repeat each move in a moveset n times
+(^*^) :: Moveset -> Int -> Moveset
+(^*^) (Moveset ms) n = Moveset $ map (`mmult` n) ms
+infixl 4 ^*^
+
 -- Repeat a moveset n times
 (^^^) :: Moveset -> Int -> Moveset
 (^^^) m1 0 = one
 (^^^) m1 i = m1 *** (m1 ^^^ (i - 1))
 infixl 4 ^^^
+
+-- Repeat each move in a moveset n times for each value in the list, then run a sum
+(^*^*) :: Moveset -> [Int] -> Moveset
+(^*^*) m = foldr (+++) zero . map (m ^*^)
+infixl 4 ^*^*
 
 -- Repeat a moveset n times for each value in the list, then run a sum
 (^^^*) :: Moveset -> [Int] -> Moveset
@@ -113,15 +127,16 @@ treeToSet = cata f
     f (BaseMoveF delta) = Moveset [Move [delta]]
 
 modToFold :: Modifier -> (Moveset -> Moveset)
-modToFold (Mirror i)      = (>>> (forking $ mmap $ mirror i))
-modToFold (Swap i j)      = (>>> (forking $ mmap $ swap i j))
-modToFold (MirrorXY)      = (>>> xm . ym)
-modToFold (MirrorXYSwap)  = (>>> xm . ym . sm)
-modToFold (Exponents grp) = (^^^* (foldMap expGroupToList grp))
-modToFold (Above axis v)  = (>>> above axis v)
-modToFold (Below axis v)  = (>>> below axis v)
+modToFold (Mirror i)        = (>>> (forking $ mmap $ mirror i))
+modToFold (Swap i j)        = (>>> (forking $ mmap $ swap i j))
+modToFold (MirrorXY)        = (>>> xm . ym)
+modToFold (MirrorXYSwap)    = (>>> xm . ym . sm)
+modToFold (MapMultiply grp) = (^*^* (foldMap expGroupToList grp))
+modToFold (Exponents grp)   = (^^^* (foldMap expGroupToList grp))
+modToFold (Above axis v)    = (>>> above axis v)
+modToFold (Below axis v)    = (>>> below axis v)
 
-expGroupToList :: ExpGroup -> [Int]
+expGroupToList :: Group -> [Int]
 expGroupToList (Range Nothing end)
   = expGroupToList (Range (Just 1) end)
 expGroupToList (Range start Nothing)
