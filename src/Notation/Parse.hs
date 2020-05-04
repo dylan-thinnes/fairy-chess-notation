@@ -1,10 +1,10 @@
-module Notation.Parse where
+module Notation.Parse (parseMove) where
 
 import Notation hiding (move)
+import Prelude hiding (sum, product)
 
 import Text.Parsec
 import Control.Lens
-import Data.List
 import Data.Maybe (fromMaybe)
 
 type Parser m a = ParsecT String () m a
@@ -20,38 +20,38 @@ parseMove :: String -> Either ParseError MoveTree
 parseMove = runParser Notation.Parse.move () "<debug>"
 
 -- Moves
-move :: (Monad m) => Parser m MoveTree
+move, sum, product, modified :: (Monad m) => Parser m MoveTree
 move = sum
-    where
-    sum = do
-        -- Parse in as many products as possible
-        product <- product
-        rest <- optionMaybe $ do
-            string ","
-            sum
-        pure $ case rest of
-                  Nothing   -> product
-                  Just rest -> product :+: rest
 
-    product = do
-        -- Parse in as many modified moves as possible
-        modified <- modified
-        rest <- optionMaybe $ do
-            string "."
-            product
-        pure $ case rest of
-                  Nothing   -> modified
-                  Just rest -> modified :*: rest
+sum = do
+    -- Parse in as many products as possible
+    product <- product
+    rest <- optionMaybe $ do
+        string ","
+        sum
+    pure $ case rest of
+              Nothing   -> product
+              Just rest -> product :+: rest
 
-    modified = do                                      
-        move <- choice                        -- Parse in moves followed by modifiers
-           [ BaseMove <$> baseMove                  -- Either a basemove
-           , between (string "(") (string ")") move -- Or a pair of parens with another move
-           ]
-        mods <- modifiers                     -- Parse in modifiers
-        pure $ if null mods                   -- If there are no modifiers...
-                  then move                         -- Just return move
-                  else Modified move mods           -- Otherwise, return modified move
+product = do
+    -- Parse in as many modified moves as possible
+    modified <- modified
+    rest <- optionMaybe $ do
+        string "."
+        product
+    pure $ case rest of
+              Nothing   -> modified
+              Just rest -> modified :*: rest
+
+modified = do                                      
+    move <- choice                        -- Parse in moves followed by modifiers
+       [ BaseMove <$> baseMove                  -- Either a basemove
+       , between (string "(") (string ")") move -- Or a pair of parens with another move
+       ]
+    mods <- modifiers                     -- Parse in modifiers
+    pure $ if null mods                   -- If there are no modifiers...
+              then move                         -- Just return move
+              else Modified move mods           -- Otherwise, return modified move
 
 baseMove :: (Monad m) => Parser m Delta
 baseMove = fmap Delta
