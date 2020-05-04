@@ -1,8 +1,13 @@
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE DeriveFunctor, DeriveTraversable, DeriveGeneric #-}
 
 module Notation where
 
 import Control.Lens.TH (makeLenses)
+import Data.Functor.Foldable
+import Data.Functor.Foldable.TH (makeBaseFunctor)
 
 -- Basic data types: Delta, Move, Moveset
 newtype Delta = Delta { _delta :: [Integer] }
@@ -60,4 +65,6 @@ data Modifier = Mirror Int
 
 data ExpGroup = Range (Maybe Int) (Maybe Int) | Single Int
     deriving Show
+
+makeBaseFunctor ''MoveTree
 
