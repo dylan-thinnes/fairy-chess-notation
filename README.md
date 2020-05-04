@@ -239,8 +239,8 @@ This multiplies each an **entire moveset** by itself by the number of times for
 each value in the range, and then sums those multiplied movesets.
 
 While the `{}` operator runs on each move individually, this operator, `{{}}`
-actually multiplies movesets using `.` repeatedly. This may be a hard concept
-to grasp - let's look at an example.
+actually multiplies movesets using `.` repeatedly. This may be a hard
+distinction to grasp - let's look at a few examples.
 
 #### `([1,2],[2,1]){{2}}`
 
