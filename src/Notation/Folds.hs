@@ -103,8 +103,8 @@ instance S.Semiring Moveset where
 
 -- Converter for MoveTree to Moveset
 treeToSet :: MoveTree -> Moveset
-treeToSet (Sum trees) = foldr (+++) zero $ map treeToSet trees
-treeToSet (Product trees) = foldr (***) one $ map treeToSet trees
+treeToSet (t1 :+: t2) = treeToSet t1 +++ treeToSet t2
+treeToSet (t1 :*: t2) = treeToSet t1 *** treeToSet t2
 treeToSet (Modified tree mods) = endo (reverse $ map modToFold mods) $ treeToSet tree 
 treeToSet (BaseMove delta) = Moveset [Move [delta]]
 

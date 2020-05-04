@@ -25,17 +25,23 @@ move = sum
     where
     sum = do
         -- Parse in as many products as possible
-        xs <- flip sepBy1 (string ",") product
-        pure $ case xs of 
-                [x] -> x
-                _   -> Sum xs
+        product <- product
+        rest <- optionMaybe $ do
+            string ","
+            sum
+        pure $ case rest of
+                  Nothing   -> product
+                  Just rest -> product :+: rest
 
     product = do
         -- Parse in as many modified moves as possible
-        xs <- flip sepBy1 (string ".") modified
-        pure $ case xs of
-                [x] -> x
-                _   -> Product xs
+        modified <- modified
+        rest <- optionMaybe $ do
+            string "."
+            product
+        pure $ case rest of
+                  Nothing   -> modified
+                  Just rest -> modified :*: rest
 
     modified = do                                      
         move <- choice                        -- Parse in moves followed by modifiers
