@@ -19,7 +19,7 @@ import Data.Colour.SRGB
 import qualified Data.HashSet as S
 import Data.List (transpose)
 import Data.Bifunctor (bimap)
-import Control.Lens (_Just, _1, _2, (.~), (%~))
+import Control.Lens (_Just, _1, _2, _3, view, (.~), (%~))
 
 -- Utils
 (#) x f = f x
@@ -38,7 +38,7 @@ getRanges coords
            else clampedToZero
 
 -- Runner
-debug :: (Moveset -> IO a) -> IO a
+debug :: (String -> Moveset -> IO a) -> IO a
 debug f = do
     input <- getLine
     let parse = parseMove input
@@ -47,11 +47,11 @@ debug f = do
                       putStrLn ("No parse: " ++ show err)
                       putStrLn "Try again."
                       debug f
-      Right tree -> f $ treeToSet tree
+      Right tree -> f input $ treeToSet tree
 
 -- IN TERMINAL RENDERER
-terminal :: Moveset -> IO ()
-terminal ms
+terminal :: String -> Moveset -> IO ()
+terminal _ ms
   = putStr $ unlines $ map concat
   $ flip map [maxY,maxY-1..minY] $ \y ->
         flip map [minX..maxX] $ \x ->
@@ -92,21 +92,19 @@ diff :: Vector -> Vector -> Vector
 diff (x1, y1) (x2, y2) = (x2 - x1, y2 - y1)
 
 -- Actual gloss runner
-gloss :: Moveset -> IO ()
-gloss ms
+type Static = (String, Moveset, S.HashSet [Integer], [(Integer, Integer)])
+type State = (Static, Cursor, Picture)
+
+gloss :: String -> Moveset -> IO ()
+gloss source ms
   = play 
     (InWindow "Gloss" (100,100) (0,0)) white 1
-    (ms, Nothing, ms)
-    render handler
+    initialState
+    (view _3) handler
     (const id)
     where
-    render (moveset, cursor, subset)
-      = Pictures
-      $ [ glossBoard moveset
-        , cursorGloss cursor
-        , glossMoveset subset
-        , ThickCircle 4 2 # color black
-        ]
+    initialStatic = (source, ms, S.fromList (getCoords ms), getRanges $ getCoords ms)
+    initialState = (initialStatic, Nothing, render initialStatic Nothing ms)
     handler (EventMotion pos) state@(moveset, cursor, _)
       | Just newPos == fmap fst cursor = state
       | otherwise                      = updateCursor (setPos newPos) state
@@ -116,14 +114,29 @@ gloss ms
       = updateCursor cycleMode state
     handler _ state = state
 
+render :: Static -> Cursor -> Moveset -> Picture
+render (source, moveset, _, bounds) cursor subset
+  = Pictures
+  $ [ glossBoardFromRange bounds
+    , cursorGloss cursor
+    , glossMoveset subset
+    -- , infoFromBounds bounds source
+    , ThickCircle 4 2 # color black
+    ]
+
+infoFromBounds :: [(Integer, Integer)] -> String -> Picture
+infoFromBounds ((minX,maxX):(minY,maxY):_) source
+  = translate 0 --(fromIntegral $ maxX * 20 + 20)
+              (fromIntegral $ maxY * 20 + 20)
+              (scale 0.1 0.1 $ text source)
+
 type Cursor = Maybe ((Float, Float), CursorMode)
 data CursorMode = None | EndPoint | MidPoint
     deriving (Show, Eq, Enum, Bounded)
-updateCursor :: (Cursor -> Cursor)
-             -> (Moveset, Cursor, Moveset) -> (Moveset, Cursor, Moveset)
-updateCursor f (moveset, cursor, _)
+updateCursor :: (Cursor -> Cursor) -> State -> State
+updateCursor f (static, cursor, _)
   = let newCur = f cursor
-     in (moveset, newCur, restrictByCursor newCur moveset)
+     in (static, newCur, render static newCur $ restrictByCursor newCur static)
 setPos :: (Float, Float) -> Cursor -> Cursor
 setPos newPos Nothing = Just (newPos, None)
 setPos newPos x       = _Just . _1 .~ newPos $ x
@@ -133,10 +146,10 @@ cycleMode = _Just . _2 %~ f
     f newMode | newMode == maxBound = minBound
               | otherwise           = succ newMode
 
-restrictByCursor :: Cursor -> Moveset -> Moveset
-restrictByCursor Nothing ms = ms
-restrictByCursor (Just ((x,y), mode)) (Moveset ms)
-  = Moveset $ if null newMs then ms else newMs
+restrictByCursor :: Cursor -> Static -> Moveset
+restrictByCursor Nothing (_, ms, _, _) = ms
+restrictByCursor (Just ((x,y), mode)) (_, Moveset ms, endpoints, bounds)
+  = if pos `S.member` endpoints then Moveset newMs else Moveset ms
     where
     pos = [floor x `div` 20, floor y `div` 20]
     endsOnXY move = pos == getCoord move

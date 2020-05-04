@@ -16,6 +16,10 @@ newtype Moveset = Moveset { _moveset :: [Move] }
 toMoveset :: [[[Integer]]] -> Moveset
 toMoveset = Moveset . map (Move . map Delta)
 
+-- Turn a moveset into three nested lists
+fromMoveset :: Moveset -> [[[Integer]]]
+fromMoveset = map (map _delta . _move) . _moveset
+
 -- Prettier output for printing
 instance Show Delta where
     show (Delta xs) = show xs
