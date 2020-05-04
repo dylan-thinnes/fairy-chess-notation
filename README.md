@@ -54,6 +54,10 @@ blocked, it would therefore not be possible to proceed to `[2,1],` so the
 \=
 ![](doc/images/./[1,2].[2,1].png)
 
+The multiplication operator `.` binds more tightly than the addition operator
+`,`, so `[1,2].[3,3],[2,2].[4,5]` would be equivalent to
+`([1,2].[3,3]),([2,2].[4,5])`.
+
 ### Multiplication tries all combinations
 
 An important thing to remember about multiplication is it tries all
