@@ -119,7 +119,7 @@ Each moveset can be modified by appending modifiers, some of which are listed as
 
 ### Containing multitudes...
 
-In order to multiply a moveset with itself, use the range **multiplication**
+In order to multiply a moveset with itself, use the **mapped multiplication**
 modifier, written as `{a..b}` or `{c}`.
 
 The ranges can be combined with `,` so one can write
@@ -185,6 +185,25 @@ each value in the range, and then sums those multiplied movesets.
 ![](doc/images/./[1,2],[2,1].png)
 => {1..3} =>
 ![](doc/images/%28[1,2],[2,1]%29{1..3}.png)
+
+#### Multiplication vs mapped multiplication
+
+Mapped multiplication is *not* the equivalent of running multiplication n
+times. Put in notation:
+
+```
+([1,2],[2,1]){3} =/= ([1,2],[2,1]).([1,2],[2,1]).([1,2],[2,1])
+```
+
+The mapped multiplication runs the multiplication over each individual move.
+Put in notation:
+
+```
+([1,2],[2,1]){3} =/= ([1,2]{3},[2,1]{3})
+```
+
+For an operator that works more like the first example, look at
+[Exponentiation](#exponentiation).
 
 #### Omitting bounds
 
