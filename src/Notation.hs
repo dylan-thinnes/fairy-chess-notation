@@ -5,6 +5,7 @@
 
 module Notation where
 
+import Control.Lens (Iso', view, re, mapping)
 import Control.Lens.TH (makeLenses)
 import Data.Functor.Foldable.TH (makeBaseFunctor)
 
@@ -16,13 +17,22 @@ newtype Move = Move { _move :: [Delta] }
 newtype Moveset = Moveset { _moveset :: [Move] }
     deriving (Eq, Ord)
 
+-- Generate basic lenses (Isos) for data types
+makeLenses ''Delta
+makeLenses ''Move
+makeLenses ''Moveset
+
+-- Moveset <-> [[[Integer]]] iso
+msls :: Iso' Moveset [[[Integer]]]
+msls = moveset . mapping (move . mapping delta)
+
 -- Turn three nested lists to a moveset
 toMoveset :: [[[Integer]]] -> Moveset
-toMoveset = Moveset . map (Move . map Delta)
+toMoveset = view $ re msls
 
 -- Turn a moveset into three nested lists
 fromMoveset :: Moveset -> [[[Integer]]]
-fromMoveset = map (map _delta . _move) . _moveset
+fromMoveset = view msls
 
 -- Prettier output for printing
 instance Show Delta where
@@ -40,11 +50,6 @@ instance Num Delta where
     abs (Delta xs) = Delta $ map abs xs
     signum (Delta xs) = Delta $ map signum xs
     fromInteger i = Delta $ repeat i
-
--- Generate basic lenses (Isos) for data types
-makeLenses ''Delta
-makeLenses ''Move
-makeLenses ''Moveset
 
 -- Parse tree for the notation
 data MoveTree
