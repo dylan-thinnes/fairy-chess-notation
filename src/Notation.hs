@@ -58,12 +58,13 @@ data Modifier = Mirror Int
               | Swap Int Int
               | MirrorXY
               | MirrorXYSwap
-              | Exponents [ExpGroup]
+              | MapMultiply [Group]
+              | Exponents [Group]
               | Above Int Integer
               | Below Int Integer
     deriving Show
 
-data ExpGroup = Range (Maybe Int) (Maybe Int) | Single Int
+data Group = Range (Maybe Int) (Maybe Int) | Single Int
     deriving Show
 
 makeBaseFunctor ''MoveTree
