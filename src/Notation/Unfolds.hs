@@ -37,7 +37,8 @@ data MoveSeed
     deriving (Show)
 
 -- Tree of actions, represented as a fixpoint of composition of List functor with Action functor
-type ActionTreeFix = Compose [] Action (MoveSeed, [MoveSeed])
+type ActionTreeFix = Fix ActionTreeCompose
+type ActionTreeCompose = Compose [] Action
 
 -- An action or predicate on the board
 data Action a
@@ -63,6 +64,21 @@ actions as seed = foldr (\act seed -> A $ act seed) seed as
 
 finish :: MoveSeed
 finish = A Finish
+
+-- Unfold a MoveSeed into a ActionTreeFix
+growTree :: MoveSeed -> ActionTreeFix
+growTree seed = ana f (seed, [])
+    where
+    f :: (MoveSeed, [MoveSeed]) -> ActionTreeCompose (MoveSeed, [MoveSeed])
+    f (A Finish, x : rest)        = Compose [Continue (x, rest)]
+    f (A action, mrest)           = Compose [fmap (,mrest) action]
+    f (Sequence seed next, mrest) = Compose [Continue (seed, next : mrest)]
+    f (Repeat   seed next, mrest) = Compose [Continue (next, mrest), Continue (seed, Repeat seed next : mrest)]
+    f (Choice seeds, mrest)       = Compose $ map (\seed -> Continue (seed, mrest)) seeds
+
+-- Convert ActionTreeFix to ActionTree
+prettifyTree :: Fix (Compose [] Action) -> ActionTree
+prettifyTree = hoist (\(Compose xs) -> TF xs)
 
 -- An Example
 example :: MoveSeed
