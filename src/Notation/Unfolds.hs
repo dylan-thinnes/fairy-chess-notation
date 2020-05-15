@@ -56,3 +56,15 @@ makeBaseFunctor ''ActionTree
 makeLenses ''MoveSeed
 makeBaseFunctor ''MoveSeed
 makeLenses ''Action
+
+-- An Example
+example :: MoveSeed
+example
+    = Choice
+    [ A $ DeltaMove (Delta [1,2])
+        $ Choice
+        [ A $ DeltaMove (Delta [1,0]) $ A Finish
+        , A $ DeltaMove (Delta [0,1]) $ A Finish
+        ]
+    , A $ DeltaMove (Delta [2,3]) $ A Finish
+    ]
