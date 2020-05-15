@@ -23,17 +23,17 @@ data MoveSeed
 
 -- An action or predicate on the board
 data Action a
-  = DeltaMove Delta a          -- Moves a piece using a delta
-  | Condition Predicate a      -- Requires a condition to be met
-  | Continue a                 -- Guards against infinite recursion
-  | Finish                     -- Finishes a move - note that the absence of
-                               -- "a" guarantees this on a type level
-  | Transform Transformation a -- Pretransform coordinates, it's up to the
-                               -- programmer to ensure this is an involution
-                               -- (inverse of itself)
+  = DeltaMove Delta a     -- Moves a piece using a delta
+  | Condition Predicate a -- Requires a condition to be met
+  | Continue a            -- Guards against infinite recursion
+    -- Finishes a move - note that the absence of "a" guarantees this on a type level
+  | Finish
+    -- Pretransform coordinates, it's up to the programmer to ensure this is an
+    -- involution (inverse of itself)
+  | Pretransform Transformation a
     deriving (Show, Functor, Foldable, Traversable)
 
--- Predicates on game state, used in Condition actions
+-- Nodes on game state, used in Condition actions
 type State = () -- Placeholder game state for now
 data DocNode f
     = DocNode
