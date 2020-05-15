@@ -36,10 +36,6 @@ data MoveSeed
   | Choice [MoveSeed]
     deriving (Show)
 
--- Tree of actions, represented as a fixpoint of composition of List functor with Action functor
-type ActionTreeFix = Fix ActionTreeCompose
-type ActionTreeCompose = Compose [] Action
-
 -- An action or predicate on the board
 data Action a
   = DeltaMove Delta a
@@ -48,7 +44,8 @@ data Action a
   | Finish
     deriving (Show, Functor, Foldable, Traversable)
 
--- More readable version of ActionTreeFix - useful for traversal
+-- Tree of actions, represented as a recursion of composition of List functor
+-- with Action functor
 data ActionTree = T [Action ActionTree]
     deriving (Show)
 
@@ -66,19 +63,15 @@ finish :: MoveSeed
 finish = A Finish
 
 -- Unfold a MoveSeed into a ActionTreeFix
-growTree :: MoveSeed -> ActionTreeFix
+growTree :: MoveSeed -> ActionTree
 growTree seed = ana f (seed, [])
     where
-    f :: (MoveSeed, [MoveSeed]) -> ActionTreeCompose (MoveSeed, [MoveSeed])
-    f (A Finish, x : rest)        = Compose [Continue (x, rest)]
-    f (A action, mrest)           = Compose [fmap (,mrest) action]
-    f (Sequence seed next, mrest) = Compose [Continue (seed, next : mrest)]
-    f (Repeat   seed next, mrest) = Compose [Continue (next, mrest), Continue (seed, Repeat seed next : mrest)]
-    f (Choice seeds, mrest)       = Compose $ map (\seed -> Continue (seed, mrest)) seeds
-
--- Convert ActionTreeFix to ActionTree
-prettifyTree :: Fix (Compose [] Action) -> ActionTree
-prettifyTree = hoist (\(Compose xs) -> TF xs)
+    f :: (MoveSeed, [MoveSeed]) -> ActionTreeF (MoveSeed, [MoveSeed])
+    f (A Finish, x : rest)        = TF [Continue (x, rest)]
+    f (A action, mrest)           = TF [fmap (,mrest) action]
+    f (Sequence seed next, mrest) = TF [Continue (seed, next : mrest)]
+    f (Repeat   seed next, mrest) = TF [Continue (next, mrest), Continue (seed, Repeat seed next : mrest)]
+    f (Choice seeds, mrest)       = TF $ map (\seed -> Continue (seed, mrest)) seeds
 
 -- An Example
 example :: MoveSeed
