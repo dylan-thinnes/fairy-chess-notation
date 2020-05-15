@@ -5,9 +5,11 @@
 
 module Notation.Unfolds where
 
-import Notation
+import Notation hiding (Modifier(Mirror, Swap))
+import Notation.Folds
 
 import Data.Maybe (fromMaybe)
+import Control.Lens
 import Control.Lens.TH (makeLenses)
 import Data.Functor.Foldable
 import Data.Functor.Foldable.TH (makeBaseFunctor)
@@ -43,10 +45,26 @@ data DocNode f
         }
 
 type Predicate = DocNode (State -> Bool)
-type Transformation = DocNode (Delta -> Delta)
+
+data Transformation = Mirror Mirror -- on the wall...
+                    | General (DocNode (Delta -> Delta))
+data Mirror = Along Int | Swap Int Int deriving (Show, Eq, Ord)
+
+toDocNode :: Transformation -> DocNode (Delta -> Delta)
+toDocNode (General dn) = dn
+toDocNode (Mirror (Along i))
+  = DocNode (Just $ "Mirror " ++ show i)
+            (Just $ "Mirror along <" ++ show i ++ ">th axis")
+            (delta . ix i %~ negate)
+toDocNode (Mirror (Swap i j))
+  = DocNode (Just "")
+            (Just $ "Swap <" ++ show i ++ ">th and <" ++ show j ++ ">th axes")
+            (delta %~ swap i j)
 
 instance Show (DocNode a) where
     show pred = "\"" ++ (fromMaybe "no name" $ _name pred) ++ "\""
+instance Show Transformation where
+    show = show . toDocNode
 
 -- Tree of actions, represented as a recursion of composition of List functor
 -- with Action functor with Either MoveSeed functor
