@@ -17,7 +17,25 @@ import Data.Functor.Foldable
 import Data.Functor.Foldable.TH (makeBaseFunctor)
 import Data.Functor.Compose
 
-type State = ()
+-- The high-level readable "seed" which gets unfolded to a tree of actions
+data MoveSeed
+  = A (Action MoveSeed)        -- Represents an action on MoveSeed level
+  | Sequence MoveSeed MoveSeed -- Sequence two MoveSeeds
+  | Repeat MoveSeed MoveSeed   -- Run the first MoveSeed 0 or more times, before running the second
+  | Choice [MoveSeed]          -- Present a choice between MoveSeeds
+    deriving (Show)
+
+-- An action or predicate on the board
+data Action a
+  = DeltaMove Delta a     -- Moves a piece using a delta
+  | Condition Predicate a -- Requires a condition to be met
+  | Continue a            -- Guards against infinite recursion
+  | Finish                -- Finishes a move - note that the absence of "a"
+                          -- guarantees this on a type level
+    deriving (Show, Functor, Foldable, Traversable)
+
+-- Predicates on game state, used in Condition actions
+type State = () -- Placeholder game state for now
 data Predicate
     = Predicate
         { _name :: Maybe String
@@ -27,22 +45,6 @@ data Predicate
 
 instance Show Predicate where
     show pred = "\"" ++ (fromMaybe "no name" $ _name pred) ++ "\""
-
--- The high-level readable "seed" which gets unfolded to a tree of actions
-data MoveSeed
-  = A (Action MoveSeed)
-  | Sequence MoveSeed MoveSeed
-  | Repeat MoveSeed MoveSeed
-  | Choice [MoveSeed]
-    deriving (Show)
-
--- An action or predicate on the board
-data Action a
-  = DeltaMove Delta a
-  | Condition Predicate a
-  | Continue a
-  | Finish
-    deriving (Show, Functor, Foldable, Traversable)
 
 -- Tree of actions, represented as a recursion of composition of List functor
 -- with Action functor
