@@ -47,8 +47,9 @@ instance Show Predicate where
     show pred = "\"" ++ (fromMaybe "no name" $ _name pred) ++ "\""
 
 -- Tree of actions, represented as a recursion of composition of List functor
--- with Action functor
-data ActionTree = T [Action ActionTree]
+-- with Action functor with Either MoveSeed functor
+-- This allows us to only evaluate MoveSeeds to ActionTrees up to a certain depth
+data ActionTree = T (Either MoveSeed [Action ActionTree])
     deriving (Show)
 
 makeBaseFunctor ''ActionTree
@@ -64,16 +65,25 @@ actions as seed = foldr (\act seed -> A $ act seed) seed as
 finish :: MoveSeed
 finish = A Finish
 
--- Unfold a MoveSeed into a ActionTreeFix
-growTree :: MoveSeed -> ActionTree
-growTree seed = ana f (seed, [])
+-- Unfold a MoveSeed into a ActionTree, with a maximum depth
+type Depth = Int
+growTree :: MoveSeed -> Depth -> ActionTree
+growTree seed maxDepth = ana f (seed, 0, [])
     where
-    f :: (MoveSeed, [MoveSeed]) -> ActionTreeF (MoveSeed, [MoveSeed])
-    f (A Finish, x : rest)        = TF [Continue (x, rest)]
-    f (A action, mrest)           = TF [fmap (,mrest) action]
-    f (Sequence seed next, mrest) = TF [Continue (seed, next : mrest)]
-    f (Repeat   seed next, mrest) = TF [Continue (next, mrest), Continue (seed, Repeat seed next : mrest)]
-    f (Choice seeds, mrest)       = TF $ map (\seed -> Continue (seed, mrest)) seeds
+    f :: (MoveSeed, Int, [MoveSeed]) -> ActionTreeF (MoveSeed, Int, [MoveSeed])
+    f (seed, d, rest)
+      | d > maxDepth = TF $ Left seed
+      | otherwise
+      = let depth = d + 1
+         in case (seed, rest) of
+            (A Finish, x : rest)        -> TF $ Right [ Continue (x, depth, rest) ]
+            (A action, mrest)           -> TF $ Right [ fmap (,depth,mrest) action ]
+            (Sequence seed next, mrest) -> TF $ Right [ Continue (seed, depth, next : mrest) ]
+            (Repeat   seed next, mrest) -> TF $ Right
+                                              [ Continue (next, depth, mrest)
+                                              , Continue (seed, depth, Repeat seed next : mrest)
+                                              ]
+            (Choice seeds, mrest)       -> TF $ Right $ map (\seed -> Continue (seed, depth, mrest)) seeds
 
 -- An Example
 example :: MoveSeed
