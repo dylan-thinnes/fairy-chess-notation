@@ -57,6 +57,13 @@ makeLenses ''MoveSeed
 makeBaseFunctor ''MoveSeed
 makeLenses ''Action
 
+-- Helper functions for building MoveSeeds from actions
+actions :: [MoveSeed -> Action MoveSeed] -> MoveSeed -> MoveSeed
+actions as seed = foldr (\act seed -> A $ act seed) seed as
+
+finish :: MoveSeed
+finish = A Finish
+
 -- An Example
 example :: MoveSeed
 example
