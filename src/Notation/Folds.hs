@@ -116,11 +116,11 @@ instance S.Semiring Moveset where
     zero  = zero
     one   = one
 
--- Converter for MoveTree to Moveset
-treeToSet :: MoveTree -> Moveset
+-- Converter for MoveParse to Moveset
+treeToSet :: MoveParse -> Moveset
 treeToSet = cata f
     where
-    f :: MoveTreeF Moveset -> Moveset
+    f :: MoveParseF Moveset -> Moveset
     f (ms1 :+:$ ms2) = ms1 +++ ms2
     f (ms1 :*:$ ms2) = ms1 *** ms2
     f (ModifiedF ms mods) = endo (reverse $ map modToFold mods) ms

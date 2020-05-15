@@ -52,10 +52,10 @@ instance Num Delta where
     fromInteger i = Delta $ repeat i
 
 -- Parse tree for the notation
-data MoveTree
-    = MoveTree :+: MoveTree
-    | MoveTree :*: MoveTree
-    | Modified MoveTree [Modifier]
+data MoveParse
+    = MoveParse :+: MoveParse
+    | MoveParse :*: MoveParse
+    | Modified MoveParse [Modifier]
     | BaseMove Delta
     deriving Show
 
@@ -72,5 +72,5 @@ data Modifier = Mirror Int
 data Group = Range (Maybe Int) (Maybe Int) | Single Int
     deriving Show
 
-makeBaseFunctor ''MoveTree
+makeBaseFunctor ''MoveParse
 

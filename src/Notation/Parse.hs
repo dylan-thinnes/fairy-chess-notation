@@ -16,11 +16,11 @@ integral = read <$> choice [(:) <$> char '-' <*> pos, pos]
     pos = many1 digit
 
 -- Main entry point for parsing moves from strings
-parseMove :: String -> Either ParseError MoveTree
+parseMove :: String -> Either ParseError MoveParse
 parseMove = runParser Notation.Parse.move () "<debug>"
 
 -- Moves
-move, sum, product, modified :: (Monad m) => Parser m MoveTree
+move, sum, product, modified :: (Monad m) => Parser m MoveParse
 move = sum
 
 sum = do
