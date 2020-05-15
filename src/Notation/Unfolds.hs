@@ -49,7 +49,7 @@ instance Show Predicate where
 -- Tree of actions, represented as a recursion of composition of List functor
 -- with Action functor with Either MoveSeed functor
 -- This allows us to only evaluate MoveSeeds to ActionTrees up to a certain depth
-data ActionTree = T (Either MoveSeed [Action ActionTree])
+data ActionTree = Expanded [Action ActionTree] | Unexpanded MoveSeed
     deriving (Show)
 
 makeBaseFunctor ''ActionTree
@@ -72,18 +72,18 @@ growTree seed maxDepth = ana f (seed, 0, [])
     where
     f :: (MoveSeed, Int, [MoveSeed]) -> ActionTreeF (MoveSeed, Int, [MoveSeed])
     f (seed, d, rest)
-      | d > maxDepth = TF $ Left seed
+      | d > maxDepth = UnexpandedF seed
       | otherwise
       = let depth = d + 1
          in case (seed, rest) of
-            (A Finish, x : rest)        -> TF $ Right [ Continue (x, depth, rest) ]
-            (A action, mrest)           -> TF $ Right [ fmap (,depth,mrest) action ]
-            (Sequence seed next, mrest) -> TF $ Right [ Continue (seed, depth, next : mrest) ]
-            (Repeat   seed next, mrest) -> TF $ Right
+            (A Finish, x : rest)        -> ExpandedF [ Continue (x, depth, rest) ]
+            (A action, mrest)           -> ExpandedF [ fmap (,depth,mrest) action ]
+            (Sequence seed next, mrest) -> ExpandedF [ Continue (seed, depth, next : mrest) ]
+            (Repeat   seed next, mrest) -> ExpandedF
                                               [ Continue (next, depth, mrest)
                                               , Continue (seed, depth, Repeat seed next : mrest)
                                               ]
-            (Choice seeds, mrest)       -> TF $ Right $ map (\seed -> Continue (seed, depth, mrest)) seeds
+            (Choice seeds, mrest)       -> ExpandedF $ map (\seed -> Continue (seed, depth, mrest)) seeds
 
 -- An Example
 example :: MoveSeed
