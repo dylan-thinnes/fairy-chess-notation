@@ -50,3 +50,9 @@ data Action a
 -- More readable version of ActionTreeFix - useful for traversal
 data ActionTree = T [Action ActionTree]
     deriving (Show)
+
+makeBaseFunctor ''ActionTree
+
+makeLenses ''MoveSeed
+makeBaseFunctor ''MoveSeed
+makeLenses ''Action
