@@ -35,24 +35,18 @@ data Action a
 
 -- Predicates on game state, used in Condition actions
 type State = () -- Placeholder game state for now
-data Predicate
-    = Predicate
+data DocNode f
+    = DocNode
         { _name :: Maybe String
         , _doc :: Maybe String
-        , _f :: State -> Bool
+        , _f :: f
         }
 
-data Transformation
-    = Transformation
-        { _name' :: Maybe String
-        , _doc' :: Maybe String
-        , _f' :: Delta -> Delta
-        }
+type Predicate = DocNode (State -> Bool)
+type Transformation = DocNode (Delta -> Delta)
 
-instance Show Predicate where
+instance Show (DocNode a) where
     show pred = "\"" ++ (fromMaybe "no name" $ _name pred) ++ "\""
-instance Show Transformation where
-    show tran = "\"" ++ (fromMaybe "no name" $ _name' tran) ++ "\""
 
 -- Tree of actions, represented as a recursion of composition of List functor
 -- with Action functor with Either MoveSeed functor
