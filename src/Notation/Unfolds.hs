@@ -23,11 +23,14 @@ data MoveSeed
 
 -- An action or predicate on the board
 data Action a
-  = DeltaMove Delta a     -- Moves a piece using a delta
-  | Condition Predicate a -- Requires a condition to be met
-  | Continue a            -- Guards against infinite recursion
-  | Finish                -- Finishes a move - note that the absence of "a"
-                          -- guarantees this on a type level
+  = DeltaMove Delta a          -- Moves a piece using a delta
+  | Condition Predicate a      -- Requires a condition to be met
+  | Continue a                 -- Guards against infinite recursion
+  | Finish                     -- Finishes a move - note that the absence of
+                               -- "a" guarantees this on a type level
+  | Transform Transformation a -- Pretransform coordinates, it's up to the
+                               -- programmer to ensure this is an involution
+                               -- (inverse of itself)
     deriving (Show, Functor, Foldable, Traversable)
 
 -- Predicates on game state, used in Condition actions
@@ -39,8 +42,17 @@ data Predicate
         , _f :: State -> Bool
         }
 
+data Transformation
+    = Transformation
+        { _name' :: Maybe String
+        , _doc' :: Maybe String
+        , _f' :: Delta -> Delta
+        }
+
 instance Show Predicate where
     show pred = "\"" ++ (fromMaybe "no name" $ _name pred) ++ "\""
+instance Show Transformation where
+    show tran = "\"" ++ (fromMaybe "no name" $ _name' tran) ++ "\""
 
 -- Tree of actions, represented as a recursion of composition of List functor
 -- with Action functor with Either MoveSeed functor
